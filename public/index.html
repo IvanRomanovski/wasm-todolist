@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <link rel="icon" href="<%= BASE_URL %>favicon.ico">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <title>To-Do List!</title>
+</head>
+
+<body>
+  <noscript>
+    <strong>We're sorry but todo-list-app doesn't work properly without JavaScript enabled. Please enable it to
+      continue.</strong>
+  </noscript>
+  <div id="app"></div>
+  <script>
+    function printTodos(tdl) {
+      const vectorData = tdl.get_todos();
+      for (var i = 0; i < vectorData.size(); i++) {
+        const todo = vectorData.get(i);
+        console.log(todo.id + '. ' + todo.label + ' (' + todo.completed + ')');
+      }
+    };
+
+    function stylishLog(text) {
+      console.log('%c' + text, 'font-weight: bold;');
+    }
+
+    var Module = {
+      onRuntimeInitialized: function () {
+
+        stylishLog('Testing observer pattern implementation');
+
+        const greetingsController = new Module.GreetingsController();
+        const JSGreetingsControllerObserver = new Module.JSGreetingsControllerObserver({
+          onUpdate: function (message) {
+            console.log(message + ' from C++ library callback!');
+          }
+        });
+        greetingsController.subscribe(JSGreetingsControllerObserver);
+
+        console.log(greetingsController.sayHelloTo("ZumoKit"));
+
+        stylishLog('Test SQLite integration');
+
+        // instantiate our C++ implementation
+        const todoList = new Module.TodoList(".");
+
+        // print the initial list
+        console.log("Initial Todos:");
+        printTodos(todoList);
+
+        // add a thing
+        var newId = todoList.add_todo("New Todo");
+
+        // update the new thing's status to complete
+        todoList.update_todo_completed(newId, 1);
+
+        // show updated todos
+        console.log("Todo Completed:");
+        printTodos(todoList);
+
+        // delete the thing
+        todoList.delete_todo(newId);
+
+        // show updated todos
+        console.log("Todo Deleted:");
+        printTodos(todoList);
+      }
+    };
+  </script>
+  <!-- built files will be auto injected -->
+  <script src="output.js"></script>
+</body>
+
+</html>
