@@ -31,44 +31,7 @@
 
     var Module = {
       onRuntimeInitialized: function () {
-
-        stylishLog('Testing observer pattern implementation');
-
-        const greetingsController = new Module.GreetingsController();
-        const JSGreetingsControllerObserver = new Module.JSGreetingsControllerObserver({
-          onUpdate: function (message) {
-            console.log(message + ' from C++ library callback!');
-          }
-        });
-        greetingsController.subscribe(JSGreetingsControllerObserver);
-
-        console.log(greetingsController.sayHelloTo("ZumoKit"));
-
-        stylishLog('Test SQLite integration');
-
-        // instantiate our C++ implementation
-        const todoList = new Module.TodoList(".");
-
-        // print the initial list
-        console.log("Initial Todos:");
-        printTodos(todoList);
-
-        // add a thing
-        var newId = todoList.add_todo("New Todo");
-
-        // update the new thing's status to complete
-        todoList.update_todo_completed(newId, 1);
-
-        // show updated todos
-        console.log("Todo Completed:");
-        printTodos(todoList);
-
-        // delete the thing
-        todoList.delete_todo(newId);
-
-        // show updated todos
-        console.log("Todo Deleted:");
-        printTodos(todoList);
+        window.dispatchEvent(new CustomEvent("wasmLoaded"));
       }
     };
   </script>

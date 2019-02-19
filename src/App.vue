@@ -8,7 +8,12 @@
         <form @submit.prevent="submitTodo" class="col s8 offset-s2">
           <div class="input-field">
             <i class="material-icons prefix">list</i>
-            <textarea v-model="newTodo" id="icon_prefix2" class="materialize-textarea"></textarea>
+            <textarea
+              v-model="newTodo"
+              v-on:keydown.enter.prevent="submitTodo"
+              id="icon_prefix2"
+              class="materialize-textarea"
+            ></textarea>
             <label for="icon_prefix2">What to do?</label>
           </div>
           <button class="btn waves-effect col s12">Add</button>
@@ -16,19 +21,25 @@
       </div>
       <div class="row">
         <ul class="collection col s8 offset-s2">
-          <li class="collection-item" v-for="todo in todos" :key="todo.id">
-            <p>
-              <label>
-                <input type="checkbox" :checked="todo.done" @change="todo.done = !todo.done">
-                <span>{{todo.title}}</span>
-                <span>
-                  <a @click.prevent="deleteTodo(todo)">
-                    <i class="material-icons right teal-text">delete</i>
-                  </a>
-                </span>
-              </label>
-            </p>
-          </li>
+          <template v-if="todos">
+            <li class="collection-item" v-for="i in todos.size()">
+              <p>
+                <label>
+                  <input
+                    type="checkbox"
+                    :checked="todos.get(i-1).completed"
+                    @change="updateTodoCompleted(todos.get(i-1).id, !todos.get(i-1).completed)"
+                  >
+                  <span>{{todos.get(i-1).label}}</span>
+                  <span>
+                    <a @click.prevent="deleteTodo(todos.get(i-1).id)">
+                      <i class="material-icons right teal-text">delete</i>
+                    </a>
+                  </span>
+                </label>
+              </p>
+            </li>
+          </template>
         </ul>
       </div>
     </div>
@@ -36,12 +47,17 @@
 </template>
 
 <script>
+function consoleLogBold(text) {
+  console.log("%c" + text, "font-weight: bold;");
+}
+
 export default {
   name: "app",
   data() {
     return {
-      todos: [],
-      newTodo: ""
+      todos: null,
+      newTodo: "",
+      todoListDB: null
     };
   },
   watch: {
@@ -53,21 +69,44 @@ export default {
     }
   },
   mounted() {
-    if (localStorage.todos) {
-      this.todos = JSON.parse(localStorage.todos);
-    }
+    window.addEventListener("wasmLoaded", () => {
+      consoleLogBold("WebAssembly loaded");
+
+      // instantiate our C++ implementation
+      this.todoListDB = new window.Module.TodoList(".");
+      this.todos = this.todoListDB.get_todos();
+
+      // print the initial list
+      consoleLogBold("Initial Todos:");
+      this.logTodos();
+    });
   },
   methods: {
     submitTodo() {
-      this.todos.push({
-        title: this.newTodo,
-        done: false
-      });
+      consoleLogBold("Add Todo:");
+      this.todoListDB.add_todo(this.newTodo);
+      this.todos = this.todoListDB.get_todos();
+      this.logTodos();
       this.newTodo = "";
     },
-    deleteTodo(todo) {
-      const todoIndex = this.todos.indexOf(todo);
-      this.todos.splice(todoIndex, 1);
+    deleteTodo(todoId) {
+      consoleLogBold("Delete Todo:");
+      this.todoListDB.delete_todo(todoId);
+      this.todos = this.todoListDB.get_todos();
+      this.logTodos();
+    },
+    updateTodoCompleted(todoId, completed) {
+      consoleLogBold("Update Todo Status:");
+      this.todoListDB.update_todo_completed(todoId, completed);
+      this.todos = this.todoListDB.get_todos();
+      this.logTodos();
+    },
+    logTodos() {
+      const vectorData = this.todos;
+      for (var i = 0; i < vectorData.size(); i++) {
+        const todo = vectorData.get(i);
+        console.log(todo.id + ". " + todo.label + " (" + todo.completed + ")");
+      }
     }
   }
 };
@@ -75,6 +114,6 @@ export default {
 
 <style lang="scss">
 .header {
-  margin-top: 100px;
+  margin-top: 20px;
 }
 </style>
